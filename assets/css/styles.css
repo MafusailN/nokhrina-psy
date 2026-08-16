@@ -285,6 +285,21 @@ p{ margin:0 0 1rem }
 .footer__note{ margin:0; font-size:.83rem; opacity:.65 }
 .footer__copy{ margin:0 0 0 auto; font-size:.83rem; opacity:.65 }
 
+/* ============ Правовые страницы ============ */
+.legal h1{ font-size:clamp(1.9rem, 4vw, 2.8rem); margin-bottom:.8rem }
+.legal h2{ font-size:1.5rem; margin:2.6rem 0 .9rem }
+.legal p, .legal li{ color:var(--ink-soft); font-size:.98rem }
+.legal ul{ margin:0 0 1rem; padding-left:1.2rem; display:grid; gap:.4rem }
+.legal li::marker{ color:var(--accent) }
+.legal a{ color:var(--accent); text-decoration:none; border-bottom:1px solid rgba(220,162,101,.35) }
+.legal a:hover{ border-bottom-color:var(--accent) }
+.legal__date{ font-size:.85rem; color:var(--ink-soft); opacity:.75; margin-bottom:2.4rem }
+
+.footer a{ color:inherit; text-decoration:none; border-bottom:1px solid rgba(155,161,169,.35) }
+.footer a:hover{ color:var(--accent); border-bottom-color:var(--accent) }
+.check a{ color:var(--accent); text-decoration:none; border-bottom:1px solid rgba(220,162,101,.35) }
+.check a:hover{ border-bottom-color:var(--accent) }
+
 /* ============ Появление ============ */
 .reveal{ opacity:0; transform:translateY(18px); transition:opacity .7s ease, transform .7s ease }
 .reveal.is-in{ opacity:1; transform:none }

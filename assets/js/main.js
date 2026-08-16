@@ -11,7 +11,7 @@
    ========================================================================== */
 const CONFIG = {
   ENDPOINT: 'https://formspree.io/f/ВАШ_ID',
-  FALLBACK_EMAIL: 'mail@example.com',
+  FALLBACK_EMAIL: 'Nokhrina_y@mail.ru',
 };
 
 /* ---------- Меню ---------- */
