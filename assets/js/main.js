@@ -173,7 +173,11 @@ form.addEventListener('submit', async (e) => {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok || data.success === 'false' || data.success === false) {
-      throw new Error(data.message || res.status);
+      const err = new Error(data.message || res.status);
+      // два состояния настройки, а не сбоя связи — их важно различать
+      err.setup = /activation/i.test(data.message || '');
+      err.localFile = /web server|HTML files/i.test(data.message || '');
+      throw err;
     }
 
     form.reset();
@@ -181,12 +185,22 @@ form.addEventListener('submit', async (e) => {
     status.className = 'form__status is-ok';
     status.textContent = 'Спасибо! Заявка отправлена — я отвечу в течение дня.';
   } catch (err) {
-    // не теряем человека: показываем прямые контакты прямо в сообщении
     status.className = 'form__status is-err';
-    status.innerHTML =
-      'Не получилось отправить — возможно, пропала связь. ' +
-      `Напишите, пожалуйста, в <a href="${CONFIG.TELEGRAM}" target="_blank" rel="noopener">Telegram</a> ` +
-      `или на <a href="mailto:${CONFIG.EMAIL}">${CONFIG.EMAIL}</a>.`;
+    if (err.localFile) {
+      // видит только разработчик, открывший index.html двойным кликом
+      status.textContent =
+        'Форма не работает при открытии файла с диска. Проверяйте её на опубликованном сайте.';
+    } else if (err.setup) {
+      status.textContent =
+        'Форма ещё не активирована: на почту отправлено письмо со ссылкой «Activate Form», ' +
+        'по ней нужно перейти один раз.';
+    } else {
+      // не теряем человека: показываем прямые контакты прямо в сообщении
+      status.innerHTML =
+        'Не получилось отправить — возможно, пропала связь. ' +
+        `Напишите, пожалуйста, в <a href="${CONFIG.TELEGRAM}" target="_blank" rel="noopener">Telegram</a> ` +
+        `или на <a href="mailto:${CONFIG.EMAIL}">${CONFIG.EMAIL}</a>.`;
+    }
   } finally {
     btn.disabled = false;
     btn.textContent = label;
