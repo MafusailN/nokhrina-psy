@@ -1,17 +1,22 @@
 /* ==========================================================================
    Настройки отправки заявок
    --------------------------------------------------------------------------
-   ENDPOINT — адрес, куда уходит форма. Проще всего Formspree:
-     1. formspree.io → зарегистрироваться на почту Юлии
-     2. New form → скопировать адрес вида https://formspree.io/f/abcdwxyz
-     3. вставить его ниже вместо строки-заглушки
-   Пока ENDPOINT не заменён, форма открывает почтовый клиент (запасной режим).
+   Заявка уходит письмом на почту через FormSubmit — сервису не нужны ни
+   регистрация, ни свой сервер. Посетитель никуда не переходит и ничего
+   не открывает: нажал кнопку, увидел «спасибо».
 
-   TELEGRAM — если позже захотим дублировать заявки в Telegram, см. README.
+   ВАЖНО: первое письмо сервис задержит, пока адрес не подтверждён. После
+   первой отправки на почту придёт письмо со ссылкой активации — по ней нужно
+   перейти один раз. Подробности в README.
+
+   После активации FormSubmit выдаёт «скрытый» адрес вида
+   https://formsubmit.co/ajax/abc123… — его стоит подставить вместо почты,
+   чтобы адрес не лежал в открытом коде и его не собрали спам-боты.
    ========================================================================== */
 const CONFIG = {
-  ENDPOINT: 'https://formspree.io/f/ВАШ_ID',
-  FALLBACK_EMAIL: 'Nokhrina_y@mail.ru',
+  ENDPOINT: 'https://formsubmit.co/ajax/Nokhrina_y@mail.ru',
+  EMAIL: 'Nokhrina_y@mail.ru',
+  TELEGRAM: 'https://t.me/yuliyanokhrina',
 };
 
 /* ---------- Меню ---------- */
@@ -132,27 +137,18 @@ const validate = () => {
 
 const buildPayload = () => {
   const d = new FormData(form);
+  const name = d.get('name').trim();
   return {
-    'Имя': d.get('name').trim(),
+    'Имя': name,
     'Контакт': d.get('contact').trim(),
     'Формат': d.get('format'),
-    'Удобное время': d.get('time').trim() || '—',
-    'Запрос': d.get('message').trim() || '—',
-    _subject: `Заявка с сайта — ${d.get('name').trim()}`,
+    'Удобное время': d.get('time').trim() || 'не указано',
+    'Запрос': d.get('message').trim() || 'не указан',
+    _subject: `Заявка с сайта — ${name}`,
+    _template: 'table',   // письмо приходит аккуратной таблицей
+    _captcha: 'false',    // капча не нужна: заявку отправляет наш скрипт
     _gotcha: d.get('_gotcha'),
   };
-};
-
-const mailtoFallback = (payload) => {
-  const body = Object.entries(payload)
-    .filter(([k]) => !k.startsWith('_'))
-    .map(([k, v]) => `${k}: ${v}`)
-    .join('\n');
-  window.location.href =
-    `mailto:${CONFIG.FALLBACK_EMAIL}?subject=${encodeURIComponent(payload._subject)}` +
-    `&body=${encodeURIComponent(body)}`;
-  status.className = 'form__status is-ok';
-  status.textContent = 'Открылся почтовый клиент — осталось нажать «Отправить».';
 };
 
 form.addEventListener('submit', async (e) => {
@@ -162,7 +158,7 @@ form.addEventListener('submit', async (e) => {
   if (!validate()) return;
 
   const payload = buildPayload();
-  if (payload._gotcha) return; // бот
+  if (payload._gotcha) return; // бот заполнил скрытое поле
 
   const btn = form.querySelector('button[type="submit"]');
   const label = btn.textContent;
@@ -170,23 +166,27 @@ form.addEventListener('submit', async (e) => {
   btn.textContent = 'Отправляем…';
 
   try {
-    if (CONFIG.ENDPOINT.includes('ВАШ_ID')) {
-      mailtoFallback(payload);
-      return;
-    }
     const res = await fetch(CONFIG.ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) throw new Error(res.status);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || data.success === 'false' || data.success === false) {
+      throw new Error(data.message || res.status);
+    }
 
     form.reset();
+    form.querySelector('.chips input').checked = true;   // вернуть формат по умолчанию
     status.className = 'form__status is-ok';
     status.textContent = 'Спасибо! Заявка отправлена — я отвечу в течение дня.';
   } catch (err) {
+    // не теряем человека: показываем прямые контакты прямо в сообщении
     status.className = 'form__status is-err';
-    status.textContent = 'Не получилось отправить. Напишите, пожалуйста, в Telegram или на почту.';
+    status.innerHTML =
+      'Не получилось отправить — возможно, пропала связь. ' +
+      `Напишите, пожалуйста, в <a href="${CONFIG.TELEGRAM}" target="_blank" rel="noopener">Telegram</a> ` +
+      `или на <a href="mailto:${CONFIG.EMAIL}">${CONFIG.EMAIL}</a>.`;
   } finally {
     btn.disabled = false;
     btn.textContent = label;
