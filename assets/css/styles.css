@@ -77,7 +77,7 @@ p{ margin:0 0 1rem }
   font-family:var(--serif); font-size:1.3rem; text-decoration:none;
   letter-spacing:.01em; margin-right:auto; white-space:nowrap;
 }
-.nav__logo span{ color:var(--ink-soft); font-size:.92em }
+.nav__logo span{ color:inherit; font-size:inherit }
 .nav__links{ display:flex; gap:1.7rem }
 .nav__links a{
   text-decoration:none; font-size:.92rem; color:var(--ink-soft);
@@ -370,8 +370,8 @@ p{ margin:0 0 1rem }
 @media (max-width:600px){
   body{ font-size:16px }
   /* в одну строку рядом с бургером не помещается — уводим приписку под имя */
-  .nav__logo{ font-size:1.15rem; line-height:1.15 }
-  .nav__logo span{ display:block; font-size:.62em; letter-spacing:.04em }
+  .nav__logo{ font-size:1.1rem; line-height:1.2 }
+  .nav__logo span{ display:block }
   .form__row{ grid-template-columns:1fr }
   .hero__facts{ gap:1.4rem }
   .footer__copy{ margin-left:0 }
