@@ -19,39 +19,78 @@ const nav = document.getElementById('nav');
 const burger = document.querySelector('.nav__burger');
 const links = document.querySelector('.nav__links');
 
-burger.addEventListener('click', () => {
+burger.addEventListener('click', (e) => {
+  e.stopPropagation();
   const open = links.classList.toggle('is-open');
   burger.setAttribute('aria-expanded', String(open));
 });
-links.addEventListener('click', (e) => {
-  if (e.target.tagName === 'A') {
-    links.classList.remove('is-open');
-    burger.setAttribute('aria-expanded', 'false');
-  }
+const closeMenu = () => {
+  links.classList.remove('is-open');
+  burger.setAttribute('aria-expanded', 'false');
+};
+
+links.addEventListener('click', (e) => { if (e.target.tagName === 'A') closeMenu(); });
+document.addEventListener('click', (e) => {
+  if (links.classList.contains('is-open') && !e.target.closest('.nav')) closeMenu();
 });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeMenu(); });
 
 const onScroll = () => nav.classList.toggle('is-stuck', window.scrollY > 8);
 onScroll();
 window.addEventListener('scroll', onScroll, { passive: true });
 
+const calmMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 /* ---------- Появление блоков ---------- */
+/* Порог маленький, а нижний отступ отрицательный: анимация стартует чуть раньше,
+   чем блок доедет до центра, — при быстрой прокрутке не выглядит рывком. */
 const io = new IntersectionObserver((entries) => {
   entries.forEach((entry, i) => {
     if (!entry.isIntersecting) return;
-    entry.target.style.transitionDelay = `${Math.min(i * 70, 350)}ms`;
+    entry.target.style.transitionDelay = `${Math.min(i * 55, 220)}ms`;
     entry.target.classList.add('is-in');
     io.unobserve(entry.target);
   });
-}, { threshold: 0.12, rootMargin: '0px 0px -40px' });
+}, { threshold: 0.05, rootMargin: '0px 0px -8%' });
 
 document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
 
-/* ---------- FAQ: открыт только один пункт ---------- */
-const faqItems = document.querySelectorAll('.faq details');
+/* ---------- FAQ ---------- */
+/* Штатный <details> схлопывается мгновенно: браузер убирает содержимое из потока
+   раньше, чем отработает transition. Поэтому высотой управляем вручную. */
+const faqItems = [...document.querySelectorAll('.faq details')];
+
+const expand = (item) => {
+  const body = item.querySelector('.faq__body');
+  item.open = true;
+  if (calmMotion) { body.style.height = 'auto'; return; }
+  body.style.height = '0px';
+  requestAnimationFrame(() => { body.style.height = `${body.scrollHeight}px`; });
+  body.addEventListener('transitionend', function done(e) {
+    if (e.propertyName !== 'height') return;
+    body.style.height = 'auto';           // чтобы текст мог свободно переверстаться
+    body.removeEventListener('transitionend', done);
+  });
+};
+
+const collapse = (item) => {
+  const body = item.querySelector('.faq__body');
+  if (calmMotion) { body.style.height = '0px'; item.open = false; return; }
+  body.style.height = `${body.scrollHeight}px`;
+  requestAnimationFrame(() => { body.style.height = '0px'; });
+  body.addEventListener('transitionend', function done(e) {
+    if (e.propertyName !== 'height') return;
+    item.open = false;                    // закрываем только после анимации
+    body.removeEventListener('transitionend', done);
+  });
+};
+
 faqItems.forEach((item) => {
-  item.addEventListener('toggle', () => {
-    if (!item.open) return;
-    faqItems.forEach((other) => { if (other !== item) other.open = false; });
+  item.querySelector('summary').addEventListener('click', (e) => {
+    e.preventDefault();
+    if (item.open) { collapse(item); return; }
+    faqItems.forEach((other) => { if (other !== item && other.open) collapse(other); });
+    expand(item);
   });
 });
 

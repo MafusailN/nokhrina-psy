@@ -223,9 +223,12 @@ p{ margin:0 0 1rem }
 .faq summary::-webkit-details-marker{ display:none }
 .faq summary::after{
   content:"+"; margin-left:auto; font-size:1.4rem; color:var(--accent);
-  transition:transform .25s; line-height:1;
+  transition:transform .35s cubic-bezier(.4,0,.2,1); line-height:1;
 }
-.faq details[open] summary::after{ transform:rotate(45deg) }
+.faq details[open] summary::after{ transform:rotate(135deg) }
+.faq summary:active{ opacity:.7 }
+/* высотой управляет JS — нужно, чтобы закрытие тоже анимировалось */
+.faq__body{ overflow:hidden; height:0; transition:height .38s cubic-bezier(.4,0,.2,1) }
 .faq details p{ margin:0 0 1.5rem; padding-right:2.5rem; color:var(--ink-soft); font-size:.98rem }
 
 /* ============ Форма ============ */
@@ -301,8 +304,31 @@ p{ margin:0 0 1rem }
 .check a:hover{ border-bottom-color:var(--accent) }
 
 /* ============ Появление ============ */
-.reveal{ opacity:0; transform:translateY(18px); transition:opacity .7s ease, transform .7s ease }
-.reveal.is-in{ opacity:1; transform:none }
+.reveal{
+  opacity:0; transform:translateY(22px);
+  transition:opacity .8s cubic-bezier(.22,.61,.36,1), transform .8s cubic-bezier(.22,.61,.36,1);
+  will-change:opacity, transform;
+}
+.reveal.is-in{ opacity:1; transform:none; will-change:auto }
+
+/* ============ Сенсорные экраны ============ */
+/* без этого после тапа кнопка «залипает» в hover-состоянии */
+@media (hover:none){
+  .btn:hover{ transform:none; box-shadow:none; background:var(--b); border-color:var(--b) }
+  .btn:active{ transform:scale(.97) }
+  .btn--ghost:hover{ background:transparent; border-color:var(--line) }
+  .btn--ghost:active{ border-color:var(--accent) }
+
+  .card:hover{ transform:none; box-shadow:none; border-color:var(--line) }
+  .card:active{ border-color:var(--accent); background:#20262F }
+  .card{ transition:border-color .2s, background .2s }
+
+  .contacts__links a:hover{ border-color:var(--line); color:var(--ink) }
+  .contacts__links a:active{ border-color:var(--accent); color:var(--accent) }
+
+  .nav__links a:hover{ color:var(--ink-soft) }
+  .nav__links a::after{ display:none }
+}
 
 /* ============ Адаптив ============ */
 @media (max-width:900px){
@@ -312,11 +338,30 @@ p{ margin:0 0 1rem }
   .about__photo{ position:static; max-width:280px }
   .nav__links{
     position:absolute; top:72px; left:0; right:0; flex-direction:column; gap:0;
-    background:var(--bg); border-bottom:1px solid var(--line);
-    padding:.5rem 20px 1.2rem; display:none;
+    background:rgba(18,21,25,.97); backdrop-filter:blur(14px);
+    padding:0 20px; overflow:hidden;
+    max-height:0; opacity:0; visibility:hidden; border-bottom:1px solid transparent;
+    transition:max-height .4s cubic-bezier(.4,0,.2,1), opacity .3s ease,
+               padding .4s ease, visibility 0s .4s, border-color .3s;
   }
-  .nav__links.is-open{ display:flex }
-  .nav__links a{ padding:.85rem 0; border-bottom:1px solid var(--line) }
+  .nav__links.is-open{
+    max-height:60vh; opacity:1; visibility:visible;
+    padding:.5rem 20px 1.2rem; border-bottom-color:var(--line);
+    transition:max-height .45s cubic-bezier(.4,0,.2,1), opacity .3s ease .05s,
+               padding .4s ease, visibility 0s, border-color .3s;
+  }
+  .nav__links a{
+    padding:.85rem 0; border-bottom:1px solid var(--line);
+    opacity:0; transform:translateY(-6px);
+    transition:opacity .3s ease, transform .3s ease;
+  }
+  .nav__links.is-open a{ opacity:1; transform:none }
+  .nav__links.is-open a:nth-child(1){ transition-delay:.08s }
+  .nav__links.is-open a:nth-child(2){ transition-delay:.13s }
+  .nav__links.is-open a:nth-child(3){ transition-delay:.18s }
+  .nav__links.is-open a:nth-child(4){ transition-delay:.23s }
+  .nav__links.is-open a:nth-child(5){ transition-delay:.28s }
+  .nav__links a:active{ color:var(--accent) }
   .nav__burger{ display:flex }
   .nav .btn--sm{ display:none }
 }
